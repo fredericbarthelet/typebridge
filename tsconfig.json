@@ -1,0 +1,21 @@
+{
+    "compilerOptions": {
+      "declaration": false,
+      "esModuleInterop": true,
+      "lib": [
+        "es2015"
+      ],
+      "module": "commonjs",
+      "moduleResolution": "node",
+      "noFallthroughCasesInSwitch": true,
+      "noUnusedLocals": true,
+      "noUnusedParameters": true,
+      "outDir": "dist",
+      "preserveConstEnums": true,
+      "sourceMap": true,
+      "strict": true,
+      "target": "es5"
+    },
+    "include": ["src"],
+    "exclude": ["./**/*.test.ts"]
+}

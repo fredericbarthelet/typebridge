@@ -1,0 +1,23 @@
+{
+  "name": "typebridge",
+  "version": "0.0.1-alpha",
+  "description": "Typescript toolbox for AWS EventBridge",
+  "main": "dist/src/index.js",
+  "author": "Frédéric Barthelet",
+  "license": "MIT",
+  "scripts": {
+    "build": "rm -rf dist && tsc -d",
+    "watch": "tsc -w",
+    "test": "jest"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.786.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^26.0.15",
+    "@types/node": "^14.14.7",
+    "jest": "^26.6.3",
+    "ts-jest": "^26.4.4",
+    "typescript": "^4.0.5"
+  }
+}
