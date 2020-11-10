@@ -1,0 +1,6 @@
+.github
+node_modules
+src
+.gitignore
+jest.config.js
+tsconfig.json
