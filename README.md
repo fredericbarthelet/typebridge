@@ -2,6 +2,13 @@
 
 Typescript toolbox for AWS EventBridge
 
+## Advantages
+
+- Programmatical definition of your application events
+- Typed publish and consume APIs
+- Automatically batches `putEvents` call when publishing more than 10 events at a time
+- Check for event payload size before publishing
+
 ## Quick install
 
 ### Add typebridge dependency
