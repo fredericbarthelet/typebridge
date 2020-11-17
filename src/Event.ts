@@ -1,24 +1,32 @@
 import type { AWSError, EventBridge } from 'aws-sdk';
 import { PromiseResult } from 'aws-sdk/lib/request';
+import Ajv from 'ajv'
+import { FromSchema } from 'json-schema-to-ts'
 
 import { Bus } from './Bus';
 
-export class Event<P extends Record<string, unknown>> {
+const ajv = new Ajv();
+
+export class Event<S extends Record<string, unknown>, P = FromSchema<S>> {
   private _name: string;
   private _source: string;
   private _bus: Bus;
+  private _validate: Ajv.ValidateFunction;
   constructor({
     name,
     source,
     bus,
+    schema,
   }: {
     name: string;
     source: string;
     bus: Bus;
+    schema: S;
   }) {
     this._name = name;
     this._source = source;
     this._bus = bus;
+    this._validate = ajv.compile(schema)
   }
 
   get name(): string {
@@ -32,6 +40,9 @@ export class Event<P extends Record<string, unknown>> {
   async publish(
     event: P,
   ): Promise<PromiseResult<EventBridge.PutEventsResponse, AWSError>[]> {
+    if (!this._validate(event)) {
+      throw new Error('Event doest not satisfy schema')
+    }
     return this._bus.put([
       { Source: this._source, DetailType: this._name, Detail: event },
     ]);

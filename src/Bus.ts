@@ -6,7 +6,7 @@ import { Event } from './Event';
 interface BusPutEvent {
   Source: string;
   DetailType: string;
-  Detail?: Record<string, unknown>;
+  Detail?: unknown;
 }
 
 export class Bus {

@@ -1,6 +1,6 @@
 import { computeEventSize } from './Bus';
 
-describe('Typebridge', () => {
+describe('Bus', () => {
   describe('#computeEventSize', () => {
     it('should compute event size', () => {
       expect(
