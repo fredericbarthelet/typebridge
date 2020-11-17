@@ -1,4 +1,4 @@
-import { computeEventSize } from './index';
+import { computeEventSize } from './Bus';
 
 describe('Typebridge', () => {
   describe('#computeEventSize', () => {
