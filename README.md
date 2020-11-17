@@ -1,4 +1,4 @@
-# Typebridge
+# TypeBridge
 
 Typescript toolbox for AWS EventBridge
 
