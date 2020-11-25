@@ -1,7 +1,8 @@
+import Ajv from 'ajv'
 import type { AWSError, EventBridge } from 'aws-sdk';
 import { PromiseResult } from 'aws-sdk/lib/request';
-import Ajv from 'ajv'
 import { FromSchema } from 'json-schema-to-ts'
+import middy from '@middy/core';
 
 import { Bus } from './Bus';
 
@@ -46,6 +47,18 @@ export class Event<S extends Record<string, unknown>, P = FromSchema<S>> {
     return this._bus.put([
       { Source: this._source, DetailType: this._name, Detail: event },
     ]);
+  }
+
+  validationMiddleware(): middy.MiddlewareObject<any, any, any> {
+    return {
+      before: (handler, next) => {
+        if (!this._validate(handler.event)) {
+          throw new Error('Object validation failed')
+        }
+
+        next()
+      }
+    }
   }
 
   computePattern(): { 'detail-type': string[]; source: string[] } {
