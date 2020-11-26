@@ -1,7 +1,8 @@
-import Ajv from 'ajv'
+import Ajv from 'ajv';
 import type { EventBridge } from 'aws-sdk';
-import { FromSchema } from 'json-schema-to-ts'
+import { FromSchema } from 'json-schema-to-ts';
 import middy from '@middy/core';
+import type { Context } from 'aws-lambda';
 
 import { Bus } from './Bus';
 
@@ -26,7 +27,7 @@ export class Event<S extends Record<string, unknown>, P = FromSchema<S>> {
     this._name = name;
     this._source = source;
     this._bus = bus;
-    this._validate = ajv.compile(schema)
+    this._validate = ajv.compile(schema);
   }
 
   get name(): string {
@@ -37,27 +38,25 @@ export class Event<S extends Record<string, unknown>, P = FromSchema<S>> {
     return this._source;
   }
 
-  async publish(
-    event: P,
-  ): Promise<EventBridge.PutEventsResponse> {
+  async publish(event: P): Promise<EventBridge.PutEventsResponse> {
     if (!this._validate(event)) {
-      throw new Error('Event doest not satisfy schema')
+      throw new Error('Event doest not satisfy schema');
     }
     return this._bus.put([
       { Source: this._source, DetailType: this._name, Detail: event },
     ]);
   }
 
-  validationMiddleware(): middy.MiddlewareObject<any, any, any> {
+  validationMiddleware(): middy.MiddlewareObject<unknown, unknown, Context> {
     return {
       before: (handler, next) => {
         if (!this._validate(handler.event)) {
-          throw new Error('Object validation failed')
+          throw new Error('Object validation failed');
         }
 
-        next()
-      }
-    }
+        next();
+      },
+    };
   }
 
   computePattern(): { 'detail-type': string[]; source: string[] } {

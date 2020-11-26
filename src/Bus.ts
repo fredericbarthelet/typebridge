@@ -23,9 +23,7 @@ export class Bus {
     this._eventBridge = EventBridge;
   }
 
-  async put(
-    events: BusPutEvent[],
-  ): Promise<EventBridge.PutEventsResponse> {
+  async put(events: BusPutEvent[]): Promise<EventBridge.PutEventsResponse> {
     const entries = events.map((entry) => {
       const formattedEntry = Object.assign(
         {},
@@ -56,16 +54,22 @@ export class Bus {
       ),
     );
 
-    return results.reduce((returnValue, result) => {
-      if (result.FailedEntryCount) {
-        returnValue.FailedEntryCount += result.FailedEntryCount
-      }
-      if (result.Entries) {
-        returnValue.Entries.push(...result.Entries);
-      }
+    return results.reduce(
+      (returnValue, result) => {
+        if (result.FailedEntryCount) {
+          returnValue.FailedEntryCount += result.FailedEntryCount;
+        }
+        if (result.Entries) {
+          returnValue.Entries.push(...result.Entries);
+        }
 
-      return returnValue
-    }, { Entries: [], FailedEntryCount: 0} as {Entries: PutEventsResultEntryList, FailedEntryCount: number})
+        return returnValue;
+      },
+      { Entries: [], FailedEntryCount: 0 } as {
+        Entries: PutEventsResultEntryList;
+        FailedEntryCount: number;
+      },
+    );
   }
 
   computePattern(

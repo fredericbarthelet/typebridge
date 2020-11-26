@@ -1,4 +1,6 @@
 .github
+.eslintrc
+.prettierrc
 node_modules
 src
 .gitignore
