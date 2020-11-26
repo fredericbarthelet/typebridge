@@ -73,7 +73,7 @@ export class Bus {
   }
 
   computePattern(
-    events: Event<Record<string, unknown>>[],
+    events: Event<string, Record<string, unknown>>[],
   ): { source?: string[]; 'detail-type'?: string[] } {
     const pattern = {};
     const areAllEventSourcesEqual = events.every(

@@ -28,7 +28,7 @@ describe('Event', () => {
       additionalProperties: false,
       required: ['attribute'],
     } as const;
-    let myBus: Bus, myEvent: Event<typeof schema>;
+    let myBus: Bus, myEvent: Event<string, typeof schema>;
 
     beforeAll(() => {
       setSDKInstance(AWS);
@@ -72,7 +72,9 @@ describe('Event', () => {
 
       return expect(
         invoke(middyfiedHandler, {
-          otherAttribute: 'hello',
+          detail: {
+            otherAttribute: 'hello',
+          },
         }),
       ).rejects.toEqual(new Error('Object validation failed'));
     });
@@ -86,8 +88,10 @@ describe('Event', () => {
 
       return expect(
         invoke(middyfiedHandler, {
-          attribute: 'goodbye',
-          numberAttribute: 23,
+          detail: {
+            attribute: 'goodbye',
+            numberAttribute: 23,
+          },
         }),
       ).resolves.toEqual('returnValue');
     });

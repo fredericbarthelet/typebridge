@@ -2,14 +2,18 @@ import Ajv from 'ajv';
 import type { EventBridge } from 'aws-sdk';
 import { FromSchema } from 'json-schema-to-ts';
 import middy from '@middy/core';
-import type { Context } from 'aws-lambda';
+import type { Context, EventBridgeEvent } from 'aws-lambda';
 
 import { Bus } from './Bus';
 
 const ajv = new Ajv();
 
-export class Event<S extends Record<string, unknown>, P = FromSchema<S>> {
-  private _name: string;
+export class Event<
+  N extends string,
+  S extends Record<string, unknown>,
+  P = FromSchema<S>
+> {
+  private _name: N;
   private _source: string;
   private _bus: Bus;
   private _validate: Ajv.ValidateFunction;
@@ -19,7 +23,7 @@ export class Event<S extends Record<string, unknown>, P = FromSchema<S>> {
     bus,
     schema,
   }: {
-    name: string;
+    name: N;
     source: string;
     bus: Bus;
     schema: S;
@@ -47,10 +51,14 @@ export class Event<S extends Record<string, unknown>, P = FromSchema<S>> {
     ]);
   }
 
-  validationMiddleware(): middy.MiddlewareObject<unknown, unknown, Context> {
+  validationMiddleware(): middy.MiddlewareObject<
+    EventBridgeEvent<N, P>,
+    unknown,
+    Context
+  > {
     return {
       before: (handler, next) => {
-        if (!this._validate(handler.event)) {
+        if (!this._validate(handler.event.detail)) {
           throw new Error('Object validation failed');
         }
 
