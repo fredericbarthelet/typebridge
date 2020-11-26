@@ -26,18 +26,24 @@ const MyBus = new Bus({
   EventBridge: new EventBridge(),
 });
 
-export type MyEventPayload = {
-  stringAttribute: string;
-  numberAttribute: number;
-};
+export const MyEventPayloadSchema = {
+  type: 'object',
+  properties: {
+    stringAttribute: { type: 'string' };
+    numberAttribute: { type: 'integer' };
+  }
+  required: ['stringAttribute'],
+  additionalProperties: false
+} as const;
 
-export const MyEvent = new Event<MyEventPayload>({
+export const MyEvent = new Event({
   name: 'MyEvent',
   bus: SafetrackerBus,
+  schema: MyEventPayloadSchema
 });
 ```
 
-### Use the event to publish
+### Use the Event class to publish
 
 ```ts
 import { MyEvent } from './events.ts';
@@ -63,7 +69,7 @@ Typechecking is automatically enabled:
   })
 ```
 
-### Use the event to generate trigger rules
+### Use the Event class to generate trigger rules
 
 Using the serverless framework with `serverless.ts` service file:
 
@@ -95,17 +101,33 @@ const serverlessConfiguration: Serverless = {
 module.exports = serverlessConfiguration;
 ```
 
-### Use the event to type input event
+### Use the Event class to type input event
 
 Using the serverless framework with `serverless.ts` service file:
 
 
 ```ts
 import { EventBridgeEvent } from 'aws-lambda/trigger/eventbridge';
+import { FromSchema } from 'json-schema-to-ts';
 import { MyEvent, MyEventPayload } from './events.ts';
 
-export const handler = (event: EventBridgeEvent<typeof MyEvent.name, MyEventPayload>) => {
+export const handler = (event: EventBridgeEvent<typeof MyEvent.name, FromSchema<typeof MyEventPayloadSchema>>) => {
   // Typed as string
-  return event.stringAttribute;
+  return event.detail.stringAttribute;
 }
+```
+
+### Use the Event class to validate the input event
+
+Using [middy](https://github.com/middyjs/middy) middleware stack in your lambda's handler, you can throw an error before your handler's code being executed if the input event `detail` property does not satisfy the JSON-schema used in `MyEvent` constructor.
+
+```ts
+import { MyEvent } from './events.ts';
+
+const handler = (event) => {
+  return 'Validation succeeded';
+}
+
+// If event.detail does not match the JSON-schema supplied to MyEvent constructor, the middleware will throw an error
+export const main = middy(handler).use(MyEvent.validationMiddleware())
 ```
