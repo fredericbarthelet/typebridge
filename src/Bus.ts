@@ -1,5 +1,5 @@
-import type { AWSError, EventBridge } from 'aws-sdk';
-import { PromiseResult } from 'aws-sdk/lib/request';
+import type { EventBridge } from 'aws-sdk';
+import { PutEventsResultEntryList } from 'aws-sdk/clients/eventbridge';
 
 import { Event } from './Event';
 
@@ -25,7 +25,7 @@ export class Bus {
 
   async put(
     events: BusPutEvent[],
-  ): Promise<PromiseResult<EventBridge.PutEventsResponse, AWSError>[]> {
+  ): Promise<EventBridge.PutEventsResponse> {
     const entries = events.map((entry) => {
       const formattedEntry = Object.assign(
         {},
@@ -50,11 +50,22 @@ export class Bus {
     for (let i = 0; i < entries.length; i += eventBridgeChunkSize) {
       chunkedEntries.push(entries.slice(i, i + eventBridgeChunkSize));
     }
-    return Promise.all(
+    const results = await Promise.all(
       chunkedEntries.map((chunk) =>
         this._eventBridge.putEvents({ Entries: chunk }).promise(),
       ),
     );
+
+    return results.reduce((returnValue, result) => {
+      if (result.FailedEntryCount) {
+        returnValue.FailedEntryCount += result.FailedEntryCount
+      }
+      if (result.Entries) {
+        returnValue.Entries.push(...result.Entries);
+      }
+
+      return returnValue
+    }, { Entries: [], FailedEntryCount: 0} as {Entries: PutEventsResultEntryList, FailedEntryCount: number})
   }
 
   computePattern(

@@ -1,6 +1,5 @@
 import Ajv from 'ajv'
-import type { AWSError, EventBridge } from 'aws-sdk';
-import { PromiseResult } from 'aws-sdk/lib/request';
+import type { EventBridge } from 'aws-sdk';
 import { FromSchema } from 'json-schema-to-ts'
 import middy from '@middy/core';
 
@@ -40,7 +39,7 @@ export class Event<S extends Record<string, unknown>, P = FromSchema<S>> {
 
   async publish(
     event: P,
-  ): Promise<PromiseResult<EventBridge.PutEventsResponse, AWSError>[]> {
+  ): Promise<EventBridge.PutEventsResponse> {
     if (!this._validate(event)) {
       throw new Error('Event doest not satisfy schema')
     }
