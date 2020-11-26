@@ -19,3 +19,7 @@ jobs:
         run: npm install
       - name: Test
         run: npm test
+      - name: Lint
+        run: npm run lint
+      - name: Type
+        run: npm run type

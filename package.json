@@ -10,7 +10,8 @@
     "lint": "eslint '**/*.ts'",
     "lint:fix": "eslint '**/*.ts' --fix",
     "watch": "tsc -w",
-    "test": "jest"
+    "type": "tsc --noEmit",
+    "test": "jest --runInBand"
   },
   "dependencies": {
     "ajv": "^6.12.6",
