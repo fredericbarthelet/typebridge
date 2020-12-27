@@ -103,15 +103,11 @@ module.exports = serverlessConfiguration;
 
 ### Use the Event class to type input event
 
-Using the serverless framework with `serverless.ts` service file:
-
-
 ```ts
-import { EventBridgeEvent } from 'aws-lambda/trigger/eventbridge';
-import { FromSchema } from 'json-schema-to-ts';
-import { MyEvent, MyEventPayload } from './events.ts';
+import { PublishedEvent } from 'typebridge';
+import { MyEvent } from './events.ts';
 
-export const handler = (event: EventBridgeEvent<typeof MyEvent.name, FromSchema<typeof MyEventPayloadSchema>>) => {
+export const handler = (event: PublishedEvent<typeof MyEvent>) => {
   // Typed as string
   return event.detail.stringAttribute;
 }

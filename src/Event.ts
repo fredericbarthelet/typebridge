@@ -16,6 +16,7 @@ export class Event<
   private _name: N;
   private _source: string;
   private _bus: Bus;
+  private _schema: S;
   private _validate: Ajv.ValidateFunction;
   private _pattern: { 'detail-type': [N]; source: string[] };
 
@@ -33,6 +34,7 @@ export class Event<
     this._name = name;
     this._source = source;
     this._bus = bus;
+    this._schema = schema;
     this._validate = ajv.compile(schema);
     this._pattern = { source: [source], 'detail-type': [name] };
   }
@@ -43,6 +45,14 @@ export class Event<
 
   get source(): string {
     return this._source;
+  }
+
+  get bus(): Bus {
+    return this._bus;
+  }
+
+  get schema(): S {
+    return this._schema;
   }
 
   get pattern(): { 'detail-type': [N]; source: string[] } {
@@ -74,3 +84,14 @@ export class Event<
     };
   }
 }
+
+type GenericEvent = Event<
+  string,
+  Record<string, unknown>,
+  Record<string, unknown>
+>;
+
+export type PublishedEvent<Event extends GenericEvent> = EventBridgeEvent<
+  Event['name'],
+  FromSchema<Event['schema']>
+>;
