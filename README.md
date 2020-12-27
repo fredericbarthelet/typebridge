@@ -90,7 +90,7 @@ const serverlessConfiguration: Serverless = {
         {
           eventBridge: {
             eventBus: 'applicationBus',
-            pattern: NewUserConnectedEvent.computePattern(),
+            pattern: NewUserConnectedEvent.pattern,
           },
         },
       ],

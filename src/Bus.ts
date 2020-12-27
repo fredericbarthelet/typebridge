@@ -27,9 +27,7 @@ export class Bus {
     const entries = events.map((entry) => {
       const formattedEntry = Object.assign(
         {},
-        {
-          ...entry,
-        },
+        { ...entry },
         {
           Detail: JSON.stringify(entry.Detail),
           EventBusName: this._name,

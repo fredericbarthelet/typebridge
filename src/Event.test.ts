@@ -95,5 +95,12 @@ describe('Event', () => {
         }),
       ).resolves.toEqual('returnValue');
     });
+
+    it('should compute correct pattern', async () => {
+      expect(myEvent.pattern).toStrictEqual({
+        'detail-type': ['myEvent'],
+        source: ['source'],
+      });
+    });
   });
 });

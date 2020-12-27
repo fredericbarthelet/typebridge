@@ -17,6 +17,8 @@ export class Event<
   private _source: string;
   private _bus: Bus;
   private _validate: Ajv.ValidateFunction;
+  private _pattern: { 'detail-type': [N]; source: string[] };
+
   constructor({
     name,
     source,
@@ -32,14 +34,19 @@ export class Event<
     this._source = source;
     this._bus = bus;
     this._validate = ajv.compile(schema);
+    this._pattern = { source: [source], 'detail-type': [name] };
   }
 
-  get name(): string {
+  get name(): N {
     return this._name;
   }
 
   get source(): string {
     return this._source;
+  }
+
+  get pattern(): { 'detail-type': [N]; source: string[] } {
+    return this._pattern;
   }
 
   async publish(event: P): Promise<EventBridge.PutEventsResponse> {
@@ -65,9 +72,5 @@ export class Event<
         next();
       },
     };
-  }
-
-  computePattern(): { 'detail-type': string[]; source: string[] } {
-    return { source: [this._source], 'detail-type': [this._name] };
   }
 }
