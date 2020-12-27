@@ -1,11 +1,13 @@
 import { promisify } from 'util';
 
-import middy from '@middy/core';
-import { setSDKInstance, mock, restore } from 'jest-aws-sdk-mock';
 import AWS from 'aws-sdk';
 import { PutEventsResponse } from 'aws-sdk/clients/eventbridge';
 import type { Handler } from 'aws-lambda';
 import context from 'aws-lambda-mock-context';
+import createError from 'http-errors';
+import middy from '@middy/core';
+import jsonValidator from '@middy/validator';
+import { setSDKInstance, mock, restore } from 'jest-aws-sdk-mock';
 
 import { Bus } from './Bus';
 import { Event } from './Event';
@@ -67,27 +69,59 @@ describe('Event', () => {
     it('should fail with the use of validationMiddleware on wrong event', () => {
       const handler: Handler = (_event, _ctx, callback) => callback(null, '5');
       const middyfiedHandler = middy(handler).use(
-        myEvent.validationMiddleware(),
+        jsonValidator({ inputSchema: myEvent.publishedEventSchema }),
       );
 
-      return expect(
+      expect(
         invoke(middyfiedHandler, {
+          source: myEvent.source,
+          'detail-type': myEvent.name,
           detail: {
             otherAttribute: 'hello',
           },
         }),
-      ).rejects.toEqual(new Error('Object validation failed'));
+      ).rejects.toEqual(
+        new createError.BadRequest('Event object failed validation'),
+      );
+
+      expect(
+        invoke(middyfiedHandler, {
+          source: 'unexpected source',
+          'detail-type': myEvent.name,
+          detail: {
+            attribute: 'goodbye',
+            numberAttribute: 23,
+          },
+        }),
+      ).rejects.toEqual(
+        new createError.BadRequest('Event object failed validation'),
+      );
+
+      expect(
+        invoke(middyfiedHandler, {
+          source: myEvent.source,
+          'detail-type': 'unexpected detail type',
+          detail: {
+            attribute: 'goodbye',
+            numberAttribute: 23,
+          },
+        }),
+      ).rejects.toEqual(
+        new createError.BadRequest('Event object failed validation'),
+      );
     });
 
     it('should succeed with the use of validationMiddleware on correct event', () => {
       const handler: Handler = (_event, _ctx, callback) =>
         callback(null, 'returnValue');
       const middyfiedHandler = middy(handler).use(
-        myEvent.validationMiddleware(),
+        jsonValidator({ inputSchema: myEvent.publishedEventSchema }),
       );
 
-      return expect(
+      expect(
         invoke(middyfiedHandler, {
+          source: myEvent.source,
+          'detail-type': myEvent.name,
           detail: {
             attribute: 'goodbye',
             numberAttribute: 23,

@@ -115,15 +115,19 @@ export const handler = (event: PublishedEvent<typeof MyEvent>) => {
 
 ### Use the Event class to validate the input event
 
-Using [middy](https://github.com/middyjs/middy) middleware stack in your lambda's handler, you can throw an error before your handler's code being executed if the input event `detail` property does not satisfy the JSON-schema used in `MyEvent` constructor.
+Using [middy](https://github.com/middyjs/middy) middleware stack in your lambda's handler, you can throw an error before your handler's code being executed if the input event `source` or `detail-type` were not expected, or if the `detail` property does not satisfy the JSON-schema used in `MyEvent` constructor.
 
 ```ts
+import middy from '@middy/core';
+import jsonValidator from '@middy/validator';
 import { MyEvent } from './events.ts';
 
 const handler = (event) => {
   return 'Validation succeeded';
-}
+};
 
 // If event.detail does not match the JSON-schema supplied to MyEvent constructor, the middleware will throw an error
-export const main = middy(handler).use(MyEvent.validationMiddleware())
+export const main = middy(handler).use(
+  jsonValidator({ inputSchema: MyEvent.publishedEventSchema }),
+);
 ```

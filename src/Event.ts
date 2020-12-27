@@ -1,18 +1,13 @@
 import Ajv from 'ajv';
 import type { EventBridge } from 'aws-sdk';
-import { FromSchema } from 'json-schema-to-ts';
-import middy from '@middy/core';
-import type { Context, EventBridgeEvent } from 'aws-lambda';
+import { FromSchema, JSONSchema } from 'json-schema-to-ts';
+import type { EventBridgeEvent } from 'aws-lambda';
 
 import { Bus } from './Bus';
 
 const ajv = new Ajv();
 
-export class Event<
-  N extends string,
-  S extends Record<string, unknown>,
-  P = FromSchema<S>
-> {
+export class Event<N extends string, S extends JSONSchema, P = FromSchema<S>> {
   private _name: N;
   private _source: string;
   private _bus: Bus;
@@ -59,6 +54,26 @@ export class Event<
     return this._pattern;
   }
 
+  get publishedEventSchema(): {
+    type: 'object';
+    properties: {
+      source: { const: string };
+      'detail-type': { const: N };
+      detail: S;
+    };
+    required: ['source', 'detail-type', 'detail'];
+  } {
+    return {
+      type: 'object',
+      properties: {
+        source: { const: this._source },
+        'detail-type': { const: this._name },
+        detail: this._schema,
+      },
+      required: ['source', 'detail-type', 'detail'],
+    };
+  }
+
   async publish(event: P): Promise<EventBridge.PutEventsResponse> {
     if (!this._validate(event)) {
       throw new Error('Event doest not satisfy schema');
@@ -66,22 +81,6 @@ export class Event<
     return this._bus.put([
       { Source: this._source, DetailType: this._name, Detail: event },
     ]);
-  }
-
-  validationMiddleware(): middy.MiddlewareObject<
-    EventBridgeEvent<N, P>,
-    unknown,
-    Context
-  > {
-    return {
-      before: (handler, next) => {
-        if (!this._validate(handler.event.detail)) {
-          throw new Error('Object validation failed');
-        }
-
-        next();
-      },
-    };
   }
 }
 
