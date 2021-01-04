@@ -1,4 +1,5 @@
 .github
+.vscode
 .eslintrc
 .prettierrc
 node_modules

@@ -90,7 +90,7 @@ const serverlessConfiguration: Serverless = {
         {
           eventBridge: {
             eventBus: 'applicationBus',
-            pattern: NewUserConnectedEvent.computePattern(),
+            pattern: NewUserConnectedEvent.pattern,
           },
         },
       ],
@@ -103,15 +103,11 @@ module.exports = serverlessConfiguration;
 
 ### Use the Event class to type input event
 
-Using the serverless framework with `serverless.ts` service file:
-
-
 ```ts
-import { EventBridgeEvent } from 'aws-lambda/trigger/eventbridge';
-import { FromSchema } from 'json-schema-to-ts';
-import { MyEvent, MyEventPayload } from './events.ts';
+import { PublishedEvent } from 'typebridge';
+import { MyEvent } from './events.ts';
 
-export const handler = (event: EventBridgeEvent<typeof MyEvent.name, FromSchema<typeof MyEventPayloadSchema>>) => {
+export const handler = (event: PublishedEvent<typeof MyEvent>) => {
   // Typed as string
   return event.detail.stringAttribute;
 }
@@ -119,15 +115,19 @@ export const handler = (event: EventBridgeEvent<typeof MyEvent.name, FromSchema<
 
 ### Use the Event class to validate the input event
 
-Using [middy](https://github.com/middyjs/middy) middleware stack in your lambda's handler, you can throw an error before your handler's code being executed if the input event `detail` property does not satisfy the JSON-schema used in `MyEvent` constructor.
+Using [middy](https://github.com/middyjs/middy) middleware stack in your lambda's handler, you can throw an error before your handler's code being executed if the input event `source` or `detail-type` were not expected, or if the `detail` property does not satisfy the JSON-schema used in `MyEvent` constructor.
 
 ```ts
+import middy from '@middy/core';
+import jsonValidator from '@middy/validator';
 import { MyEvent } from './events.ts';
 
 const handler = (event) => {
   return 'Validation succeeded';
-}
+};
 
 // If event.detail does not match the JSON-schema supplied to MyEvent constructor, the middleware will throw an error
-export const main = middy(handler).use(MyEvent.validationMiddleware())
+export const main = middy(handler).use(
+  jsonValidator({ inputSchema: MyEvent.publishedEventSchema }),
+);
 ```
