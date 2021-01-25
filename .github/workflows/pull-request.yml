@@ -1,8 +1,11 @@
 name: CI for Pull requests
 on:
+  push:
+    branches:
+    - master
   pull_request:
-    types:
-      - opened
+    branches:
+    - master
 
 jobs:
   test:
