@@ -29,16 +29,16 @@ const MyBus = new Bus({
 export const MyEventPayloadSchema = {
   type: 'object',
   properties: {
-    stringAttribute: { type: 'string' };
-    numberAttribute: { type: 'integer' };
-  }
+    stringAttribute: { type: 'string' },
+    numberAttribute: { type: 'integer' },
+  },
   required: ['stringAttribute'],
   additionalProperties: false
 } as const;
 
 export const MyEvent = new Event({
   name: 'MyEvent',
-  bus: SafetrackerBus,
+  bus: MyBus,
   schema: MyEventPayloadSchema
 });
 ```
