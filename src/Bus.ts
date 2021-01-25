@@ -3,7 +3,7 @@ import { PutEventsResultEntryList } from 'aws-sdk/clients/eventbridge';
 
 import { Event } from './Event';
 
-interface BusPutEvent {
+export interface BusPutEvent {
   Source: string;
   DetailType: string;
   Detail?: unknown;

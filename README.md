@@ -21,7 +21,7 @@ Typescript toolbox for AWS EventBridge
 import { EventBridge } from 'aws-sdk';
 import { Bus, Event } from 'typebridge';
 
-const MyBus = new Bus({
+export const MyBus = new Bus({
   name: 'applicationBus',
   EventBridge: new EventBridge(),
 });
@@ -29,16 +29,16 @@ const MyBus = new Bus({
 export const MyEventPayloadSchema = {
   type: 'object',
   properties: {
-    stringAttribute: { type: 'string' };
-    numberAttribute: { type: 'integer' };
-  }
+    stringAttribute: { type: 'string' },
+    numberAttribute: { type: 'integer' },
+  },
   required: ['stringAttribute'],
   additionalProperties: false
 } as const;
 
 export const MyEvent = new Event({
   name: 'MyEvent',
-  bus: SafetrackerBus,
+  bus: MyBus,
   schema: MyEventPayloadSchema
 });
 ```
@@ -67,6 +67,21 @@ Typechecking is automatically enabled:
     // the following line will trigger a Typescript error
     anotherAttribute: 'wrong'
   })
+```
+### Use the Event class to create an event
+
+```ts
+import { MyBus, MyEvent } from './events.ts';
+
+export const handler = async (event) => {
+  const events = event.details.map(detail => MyEvent.create({
+    stringAttribute: detail.stringAttribute,
+    numberAttribute: detail.numberAttribute,
+  })
+  await MyBus.put(events);
+
+  return 'Event published !'
+};
 ```
 
 ### Use the Event class to generate trigger rules

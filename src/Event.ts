@@ -3,7 +3,7 @@ import type { EventBridge } from 'aws-sdk';
 import { FromSchema, JSONSchema } from 'json-schema-to-ts';
 import type { EventBridgeEvent } from 'aws-lambda';
 
-import { Bus } from './Bus';
+import { Bus, BusPutEvent } from './Bus';
 
 const ajv = new Ajv();
 
@@ -74,13 +74,16 @@ export class Event<N extends string, S extends JSONSchema, P = FromSchema<S>> {
     };
   }
 
-  async publish(event: P): Promise<EventBridge.PutEventsResponse> {
+  create(event: P): BusPutEvent {
     if (!this._validate(event)) {
       throw new Error('Event doest not satisfy schema');
     }
-    return this._bus.put([
-      { Source: this._source, DetailType: this._name, Detail: event },
-    ]);
+
+    return { Source: this._source, DetailType: this._name, Detail: event };
+  }
+
+  async publish(event: P): Promise<EventBridge.PutEventsResponse> {
+    return this._bus.put([this.create(event)]);
   }
 }
 

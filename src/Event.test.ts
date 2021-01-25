@@ -136,5 +136,21 @@ describe('Event', () => {
         source: ['source'],
       });
     });
+
+    it('should create event pattern', () => {
+      expect(
+        myEvent.create({
+          attribute: 'hello',
+          numberAttribute: 12,
+        }),
+      ).toEqual({
+        Source: 'source',
+        DetailType: 'myEvent',
+        Detail: {
+          attribute: 'hello',
+          numberAttribute: 12,
+        },
+      });
+    });
   });
 });
