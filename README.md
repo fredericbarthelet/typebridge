@@ -39,7 +39,8 @@ export const MyEventPayloadSchema = {
 export const MyEvent = new Event({
   name: 'MyEvent',
   bus: MyBus,
-  schema: MyEventPayloadSchema
+  schema: MyEventPayloadSchema,
+  source: 'mySource'
 });
 ```
 
