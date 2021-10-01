@@ -76,7 +76,7 @@ export class Event<N extends string, S extends JSONSchema, P = FromSchema<S>> {
 
   create(event: P): BusPutEvent {
     if (!this._validate(event)) {
-      throw new Error('Event doest not satisfy schema');
+      throw new Error('Event doest not satisfy schema'+JSON.stringify(this._validate.errors));
     }
 
     return { Source: this._source, DetailType: this._name, Detail: event };
