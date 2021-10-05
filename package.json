@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "ajv": "^6.12.6",
-    "json-schema-to-ts": "^1.4.3"
+    "json-schema-to-ts": "1.5.0"
   },
   "devDependencies": {
     "@middy/core": "^1.4.0",
