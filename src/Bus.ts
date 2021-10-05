@@ -9,6 +9,11 @@ export interface BusPutEvent {
   Detail?: unknown;
 }
 
+type ChunkedEntriesAccumulator = {
+  chunkedEntries: EventBridge.PutEventsRequestEntry[][];
+  lastChunkSize: number;
+};
+
 export class Bus {
   private _name: string;
   private _eventBridge: EventBridge;
@@ -24,35 +29,28 @@ export class Bus {
   }
 
   async put(events: BusPutEvent[]): Promise<EventBridge.PutEventsResponse> {
-    const entries = events.map((entry) => {
-      const formattedEntry = Object.assign(
+    const entries = events.map((entry) =>
+      Object.assign(
         {},
         { ...entry },
         {
           Detail: JSON.stringify(entry.Detail),
           EventBusName: this._name,
         },
-      );
+      ),
+    );
 
-      if (computeEventSize(formattedEntry) > 256000) {
-        throw new Error('Event is too big');
-      }
-
-      return formattedEntry;
-    });
-
-    const eventBridgeChunkSize = 10;
-    const chunkedEntries = [];
-    for (let i = 0; i < entries.length; i += eventBridgeChunkSize) {
-      chunkedEntries.push(entries.slice(i, i + eventBridgeChunkSize));
-    }
+    const chunkedEntries = chunkEntries(entries);
     const results = await Promise.all(
       chunkedEntries.map((chunk) =>
         this._eventBridge.putEvents({ Entries: chunk }).promise(),
       ),
     );
 
-    return results.reduce(
+    return results.reduce<{
+      Entries: PutEventsResultEntryList;
+      FailedEntryCount: number;
+    }>(
       (returnValue, result) => {
         if (result.FailedEntryCount) {
           returnValue.FailedEntryCount += result.FailedEntryCount;
@@ -63,10 +61,7 @@ export class Bus {
 
         return returnValue;
       },
-      { Entries: [], FailedEntryCount: 0 } as {
-        Entries: PutEventsResultEntryList;
-        FailedEntryCount: number;
-      },
+      { Entries: [], FailedEntryCount: 0 },
     );
   }
 
@@ -107,4 +102,35 @@ export function computeEventSize(
   }
 
   return size;
+}
+
+export function chunkEntries(
+  events: EventBridge.PutEventsRequestEntry[],
+): ChunkedEntriesAccumulator['chunkedEntries'] {
+  return events.reduce<ChunkedEntriesAccumulator>(
+    (
+      chunkedEntriesAccumulator: ChunkedEntriesAccumulator,
+      entry: EventBridge.PutEventsRequestEntry,
+    ) => {
+      const { chunkedEntries, lastChunkSize } = chunkedEntriesAccumulator;
+      const eventSize = computeEventSize(entry);
+
+      if (lastChunkSize + eventSize > 256000)
+        return {
+          chunkedEntries: [...chunkedEntries, [entry]],
+          lastChunkSize: eventSize,
+        };
+
+      const lastChunk = chunkedEntries.pop() ?? [];
+
+      return {
+        chunkedEntries: [...chunkedEntries, [...lastChunk, entry]],
+        lastChunkSize: lastChunkSize + eventSize,
+      };
+    },
+    {
+      chunkedEntries: [],
+      lastChunkSize: 0,
+    },
+  ).chunkedEntries;
 }
