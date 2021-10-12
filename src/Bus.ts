@@ -69,6 +69,7 @@ export class Bus {
     source?: string[];
     'detail-type'?: string[];
   } {
+    // This is a test
     const pattern = {};
     const areAllEventSourcesEqual = events.every(
       (event) => event.source === events[0].source,
