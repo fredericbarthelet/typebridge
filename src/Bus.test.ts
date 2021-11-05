@@ -1,7 +1,10 @@
 import { chunkEntries, computeEventSize } from './Bus';
 
-const entry = {
-  Detail: 'small'.repeat(Math.round(50000 / 5)), // ~ 50Kb
+const smallEntry = {
+  Detail: 'small'.repeat(Math.round(25000 / 5)), // ~ 25Kb
+};
+const bigEntry = {
+  Detail: 'big'.repeat(Math.round(100000 / 3)), // ~ 100Kb
 };
 
 const cases = [
@@ -12,26 +15,46 @@ const cases = [
   },
   {
     name: 'one small enough entry',
-    entries: [entry],
-    output: [[entry]],
+    entries: [smallEntry],
+    output: [[smallEntry]],
   },
   {
-    name: '5 small enough entries',
-    entries: new Array(5).fill(entry),
-    output: [new Array(5).fill(entry)],
+    name: '3 big entries that exceeds size limit',
+    entries: new Array(3).fill(bigEntry),
+    output: [[bigEntry, bigEntry], [bigEntry]],
   },
   {
-    name: '6 entries that exceeds size limit',
-    entries: new Array(6).fill(entry),
-    output: [new Array(5).fill(entry), [entry]],
+    name: '10 small enough entries',
+    entries: new Array(10).fill(smallEntry),
+    output: [new Array(10).fill(smallEntry)],
   },
   {
-    name: '12 entries that exceeds size limit twice',
-    entries: new Array(12).fill(entry),
+    name: '5 big entries that exceeds size limit twice',
+    entries: new Array(5).fill(bigEntry),
+    output: [[bigEntry, bigEntry], [bigEntry, bigEntry], [bigEntry]],
+  },
+  {
+    name: '11 small entries that exceeds length limit',
+    entries: new Array(11).fill(smallEntry),
+    output: [new Array(10).fill(smallEntry), [smallEntry]],
+  },
+  {
+    name: 'small and big entries together',
+    entries: [
+      smallEntry,
+      smallEntry,
+      bigEntry,
+      bigEntry,
+      ...new Array(11).fill(smallEntry),
+      bigEntry,
+      bigEntry,
+      bigEntry,
+    ],
     output: [
-      new Array(5).fill(entry),
-      new Array(5).fill(entry),
-      [entry, entry],
+      [smallEntry, smallEntry, bigEntry, bigEntry], // ~ 250Kb (+ 25Kb > 256Kb)
+      new Array(10).fill(smallEntry), // 10 limit
+      [smallEntry, bigEntry, bigEntry], // ~ 225Kb (+ 100Kb > 256Kb limit)
+      [bigEntry],
     ],
   },
 ];

@@ -12,6 +12,7 @@ export interface BusPutEvent {
 type ChunkedEntriesAccumulator = {
   chunkedEntries: EventBridge.PutEventsRequestEntry[][];
   lastChunkSize: number;
+  lastChunkLength: number;
 };
 
 export class Bus {
@@ -112,13 +113,15 @@ export function chunkEntries(
       chunkedEntriesAccumulator: ChunkedEntriesAccumulator,
       entry: EventBridge.PutEventsRequestEntry,
     ) => {
-      const { chunkedEntries, lastChunkSize } = chunkedEntriesAccumulator;
+      const { chunkedEntries, lastChunkSize, lastChunkLength } =
+        chunkedEntriesAccumulator;
       const eventSize = computeEventSize(entry);
 
-      if (lastChunkSize + eventSize > 256000)
+      if (lastChunkSize + eventSize > 256000 || lastChunkLength === 10)
         return {
           chunkedEntries: [...chunkedEntries, [entry]],
           lastChunkSize: eventSize,
+          lastChunkLength: 1,
         };
 
       const lastChunk = chunkedEntries.pop() ?? [];
@@ -126,11 +129,13 @@ export function chunkEntries(
       return {
         chunkedEntries: [...chunkedEntries, [...lastChunk, entry]],
         lastChunkSize: lastChunkSize + eventSize,
+        lastChunkLength: lastChunkLength + 1,
       };
     },
     {
       chunkedEntries: [],
       lastChunkSize: 0,
+      lastChunkLength: 0,
     },
   ).chunkedEntries;
 }
