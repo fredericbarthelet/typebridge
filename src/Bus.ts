@@ -1,41 +1,39 @@
-import type { EventBridge } from 'aws-sdk';
-import { PutEventsResultEntryList } from 'aws-sdk/clients/eventbridge';
+import type {
+  EventBridgeClient,
+  PutEventsResponse,
+  PutEventsRequestEntry,
+  PutEventsResultEntry,
+} from '@aws-sdk/client-eventbridge';
+import { PutEventsCommand } from '@aws-sdk/client-eventbridge';
 
 import { Event } from './Event';
 
-export interface BusPutEvent {
-  Source: string;
-  DetailType: string;
-  Detail?: unknown;
-}
-
 type ChunkedEntriesAccumulator = {
-  chunkedEntries: EventBridge.PutEventsRequestEntry[][];
+  chunkedEntries: PutEventsRequestEntry[][];
   lastChunkSize: number;
   lastChunkLength: number;
 };
 
 export class Bus {
   private _name: string;
-  private _eventBridge: EventBridge;
+  private _eventBridge: EventBridgeClient;
   constructor({
     name,
     EventBridge,
   }: {
     name: string;
-    EventBridge: EventBridge;
+    EventBridge: EventBridgeClient;
   }) {
     this._name = name;
     this._eventBridge = EventBridge;
   }
 
-  async put(events: BusPutEvent[]): Promise<EventBridge.PutEventsResponse> {
+  async put(events: PutEventsRequestEntry[]): Promise<PutEventsResponse> {
     const entries = events.map((entry) =>
       Object.assign(
         {},
         { ...entry },
         {
-          Detail: JSON.stringify(entry.Detail),
           EventBusName: this._name,
         },
       ),
@@ -43,13 +41,14 @@ export class Bus {
 
     const chunkedEntries = chunkEntries(entries);
     const results = await Promise.all(
-      chunkedEntries.map((chunk) =>
-        this._eventBridge.putEvents({ Entries: chunk }).promise(),
-      ),
+      chunkedEntries.map((chunk) => {
+        const putEventsCommand = new PutEventsCommand({ Entries: chunk });
+        return this._eventBridge.send(putEventsCommand);
+      }),
     );
 
     return results.reduce<{
-      Entries: PutEventsResultEntryList;
+      Entries: PutEventsResultEntry[];
       FailedEntryCount: number;
     }>(
       (returnValue, result) => {
@@ -89,9 +88,7 @@ export class Bus {
   }
 }
 
-export function computeEventSize(
-  event: EventBridge.PutEventsRequestEntry,
-): number {
+export function computeEventSize(event: PutEventsRequestEntry): number {
   let size = 0;
 
   if (event.Time) size += 14;
@@ -106,12 +103,12 @@ export function computeEventSize(
 }
 
 export function chunkEntries(
-  events: EventBridge.PutEventsRequestEntry[],
+  events: PutEventsRequestEntry[],
 ): ChunkedEntriesAccumulator['chunkedEntries'] {
   return events.reduce<ChunkedEntriesAccumulator>(
     (
       chunkedEntriesAccumulator: ChunkedEntriesAccumulator,
-      entry: EventBridge.PutEventsRequestEntry,
+      entry: PutEventsRequestEntry,
     ) => {
       const { chunkedEntries, lastChunkSize, lastChunkLength } =
         chunkedEntriesAccumulator;
