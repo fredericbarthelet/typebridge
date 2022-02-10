@@ -30,13 +30,7 @@ export class Bus {
 
   async put(events: PutEventsRequestEntry[]): Promise<PutEventsResponse> {
     const entries = events.map((entry) =>
-      Object.assign(
-        {},
-        { ...entry },
-        {
-          EventBusName: this._name,
-        },
-      ),
+      Object.assign({}, { ...entry }, { EventBusName: this._name }),
     );
 
     const chunkedEntries = chunkEntries(entries);
