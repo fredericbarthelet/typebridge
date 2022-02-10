@@ -1,6 +1,6 @@
 {
   "name": "typebridge",
-  "version": "0.7.1",
+  "version": "1.0.0",
   "description": "Typescript toolbox for AWS EventBridge",
   "main": "dist/index.js",
   "author": "Frédéric Barthelet",
