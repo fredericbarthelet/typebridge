@@ -1,9 +1,12 @@
 import Ajv from 'ajv';
-import type { EventBridge } from 'aws-sdk';
+import type {
+  PutEventsRequestEntry,
+  PutEventsResponse,
+} from '@aws-sdk/client-eventbridge';
 import { FromSchema, JSONSchema } from 'json-schema-to-ts';
 import type { EventBridgeEvent } from 'aws-lambda';
 
-import { Bus, BusPutEvent } from './Bus';
+import { Bus } from './Bus';
 
 const ajv = new Ajv();
 
@@ -74,17 +77,21 @@ export class Event<N extends string, S extends JSONSchema, P = FromSchema<S>> {
     };
   }
 
-  create(event: P): BusPutEvent {
+  create(event: P): PutEventsRequestEntry {
     if (!this._validate(event)) {
       throw new Error(
         'Event does not satisfy schema' + JSON.stringify(this._validate.errors),
       );
     }
 
-    return { Source: this._source, DetailType: this._name, Detail: event };
+    return {
+      Source: this._source,
+      DetailType: this._name,
+      Detail: JSON.stringify(event),
+    };
   }
 
-  async publish(event: P): Promise<EventBridge.PutEventsResponse> {
+  async publish(event: P): Promise<PutEventsResponse> {
     return this._bus.put([this.create(event)]);
   }
 }

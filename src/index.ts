@@ -1,2 +1,2 @@
-export { Bus, BusPutEvent } from './Bus';
+export { Bus } from './Bus';
 export { Event, PublishedEvent } from './Event';

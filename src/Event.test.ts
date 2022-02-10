@@ -1,13 +1,12 @@
+import { PutEventsCommand } from '@aws-sdk/client-eventbridge';
 import { promisify } from 'util';
-
-import AWS from 'aws-sdk';
-import { PutEventsResponse } from 'aws-sdk/clients/eventbridge';
+import { EventBridgeClient } from '@aws-sdk/client-eventbridge';
+import { mockClient } from 'aws-sdk-client-mock';
 import type { Handler } from 'aws-lambda';
 import context from 'aws-lambda-mock-context';
 import createError from 'http-errors';
 import middy from '@middy/core';
 import jsonValidator from '@middy/validator';
-import { setSDKInstance, mock, restore } from 'jest-aws-sdk-mock';
 
 import { Bus } from './Bus';
 import { Event } from './Event';
@@ -31,19 +30,16 @@ describe('Event', () => {
       required: ['attribute'],
     } as const;
     let myBus: Bus, myEvent: Event<string, typeof schema>;
+    const eventBridgeMock = mockClient(EventBridgeClient);
 
     beforeAll(() => {
-      setSDKInstance(AWS);
-      mock(
-        'EventBridge',
-        'putEvents',
-        async (): Promise<PutEventsResponse> =>
-          Promise.resolve({ Entries: [{ EventId: '123456' }] }),
-      );
-
+      eventBridgeMock
+        .on(PutEventsCommand)
+        .resolves({ Entries: [{ EventId: '123456' }] });
       myBus = new Bus({
         name: 'test',
-        EventBridge: new AWS.EventBridge(),
+        // @ts-expect-error Mocking library mocked client is not type compatible with actual client
+        EventBridge: eventBridgeMock,
       });
       myEvent = new Event({
         name: 'myEvent',
@@ -53,8 +49,8 @@ describe('Event', () => {
       });
     });
 
-    afterEach(() => {
-      restore();
+    afterAll(() => {
+      eventBridgeMock.reset();
     });
 
     it('should allow publishing an event', async () => {
@@ -146,10 +142,10 @@ describe('Event', () => {
       ).toEqual({
         Source: 'source',
         DetailType: 'myEvent',
-        Detail: {
+        Detail: JSON.stringify({
           attribute: 'hello',
           numberAttribute: 12,
-        },
+        }),
       });
     });
   });

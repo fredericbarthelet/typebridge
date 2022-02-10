@@ -15,15 +15,17 @@ Typescript toolbox for AWS EventBridge
 
 `npm i typebridge --save`
 
+> Typebridge `v1` and above is meant to be used with [AWS SDK v3](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-eventbridge/index.html). If you want  to use Typebridge with AWS SDK v2, you should install `v0` versions of this package `npm i typebridge@^0`
+
 ### Define your bus and events
 
 ```ts
-import { EventBridge } from 'aws-sdk';
+import { EventBridgeClient } from '@aws-sdk/client-eventbridge';
 import { Bus, Event } from 'typebridge';
 
 export const MyBus = new Bus({
   name: 'applicationBus',
-  EventBridge: new EventBridge(),
+  EventBridge: new EventBridgeClient({}),
 });
 
 export const MyEventPayloadSchema = {

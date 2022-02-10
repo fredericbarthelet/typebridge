@@ -18,6 +18,7 @@
     "json-schema-to-ts": "1.5.0"
   },
   "devDependencies": {
+    "@aws-sdk/client-eventbridge": "^3.50.0",
     "@middy/core": "^1.4.0",
     "@middy/validator": "^1.5.0",
     "@types/aws-lambda": "^8.10.64",
@@ -26,7 +27,7 @@
     "@typescript-eslint/eslint-plugin": "^4.8.2",
     "@typescript-eslint/parser": "^4.8.2",
     "aws-lambda-mock-context": "^3.2.1",
-    "aws-sdk": "^2.789.0",
+    "aws-sdk-client-mock": "^0.5.6",
     "eslint": "^7.14.0",
     "eslint-config-prettier": "^6.15.0",
     "eslint-plugin-jest": "^24.1.3",
