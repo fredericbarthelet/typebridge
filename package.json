@@ -9,6 +9,7 @@
   "main": "dist/index.js",
   "author": "Frédéric Barthelet",
   "license": "MIT",
+  "sideEffects": false,
   "scripts": {
     "build": "rm -rf dist && tsc -d",
     "lint": "eslint '**/*.ts'",
