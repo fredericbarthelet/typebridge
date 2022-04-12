@@ -5,6 +5,7 @@ import type {
   PutEventsResultEntry,
 } from '@aws-sdk/client-eventbridge';
 import { PutEventsCommand } from '@aws-sdk/client-eventbridge';
+import { JSONSchema } from 'json-schema-to-ts';
 
 import { Event } from './Event';
 
@@ -59,7 +60,7 @@ export class Bus {
     );
   }
 
-  computePattern(events: Event<string, Record<string, unknown>>[]): {
+  computePattern(events: Event<string, JSONSchema>[]): {
     source?: string[];
     'detail-type'?: string[];
   } {

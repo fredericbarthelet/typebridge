@@ -10,7 +10,7 @@ import { Bus } from './Bus';
 
 const ajv = new Ajv();
 
-export class Event<N extends string, S extends JSONSchema, P = FromSchema<S>> {
+export class Event<N extends string, S extends JSONSchema> {
   private _name: N;
   private _source: string;
   private _bus: Bus;
@@ -77,7 +77,7 @@ export class Event<N extends string, S extends JSONSchema, P = FromSchema<S>> {
     };
   }
 
-  create(event: P): PutEventsRequestEntry {
+  create(event: FromSchema<S>): PutEventsRequestEntry {
     if (!this._validate(event)) {
       throw new Error(
         'Event does not satisfy schema' + JSON.stringify(this._validate.errors),
@@ -91,16 +91,12 @@ export class Event<N extends string, S extends JSONSchema, P = FromSchema<S>> {
     };
   }
 
-  async publish(event: P): Promise<PutEventsResponse> {
+  async publish(event: FromSchema<S>): Promise<PutEventsResponse> {
     return this._bus.put([this.create(event)]);
   }
 }
 
-type GenericEvent = Event<
-  string,
-  Record<string, unknown>,
-  Record<string, unknown>
->;
+type GenericEvent = Event<string, JSONSchema>;
 
 export type PublishedEvent<Event extends GenericEvent> = EventBridgeEvent<
   Event['name'],

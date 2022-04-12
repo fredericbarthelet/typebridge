@@ -20,6 +20,18 @@ jest.useFakeTimers();
 
 describe('Event', () => {
   describe('#construct', () => {
+    const eventBridgeMock = mockClient(EventBridgeClient);
+
+    eventBridgeMock
+      .on(PutEventsCommand)
+      .resolves({ Entries: [{ EventId: '123456' }] });
+
+    const myBus = new Bus({
+      name: 'test',
+      // @ts-expect-error Mocking library mocked client is not type compatible with actual client
+      EventBridge: eventBridgeMock,
+    });
+
     const schema = {
       type: 'object',
       properties: {
@@ -29,24 +41,12 @@ describe('Event', () => {
       additionalProperties: false,
       required: ['attribute'],
     } as const;
-    let myBus: Bus, myEvent: Event<string, typeof schema>;
-    const eventBridgeMock = mockClient(EventBridgeClient);
 
-    beforeAll(() => {
-      eventBridgeMock
-        .on(PutEventsCommand)
-        .resolves({ Entries: [{ EventId: '123456' }] });
-      myBus = new Bus({
-        name: 'test',
-        // @ts-expect-error Mocking library mocked client is not type compatible with actual client
-        EventBridge: eventBridgeMock,
-      });
-      myEvent = new Event({
-        name: 'myEvent',
-        source: 'source',
-        bus: myBus,
-        schema,
-      });
+    const myEvent = new Event({
+      name: 'myEvent',
+      source: 'source',
+      bus: myBus,
+      schema,
     });
 
     afterAll(() => {
