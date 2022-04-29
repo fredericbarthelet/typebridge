@@ -18,7 +18,7 @@ Typescript toolbox for AWS EventBridge
 ### Define your bus and events
 
 ```ts
-import { EventBridge } from 'aws-sdk';
+import EventBridge from 'aws-sdk/clients/eventbridge';
 import { Bus, Event } from 'typebridge';
 
 export const MyBus = new Bus({
@@ -33,14 +33,14 @@ export const MyEventPayloadSchema = {
     numberAttribute: { type: 'integer' },
   },
   required: ['stringAttribute'],
-  additionalProperties: false
+  additionalProperties: false,
 } as const;
 
 export const MyEvent = new Event({
   name: 'MyEvent',
   bus: MyBus,
   schema: MyEventPayloadSchema,
-  source: 'mySource'
+  source: 'mySource',
 });
 ```
 
@@ -53,22 +53,23 @@ export const handler = async (event) => {
   await MyEvent.publish({
     stringAttribute: 'string',
     numberAttribute: 12,
-  })
+  });
 
-  return 'Event published !'
+  return 'Event published !';
 };
 ```
 
 Typechecking is automatically enabled:
 
 ```ts
-  await MyEvent.publish({
-    stringAttribute: 'string',
-    numberAttribute: 12,
-    // the following line will trigger a Typescript error
-    anotherAttribute: 'wrong'
-  })
+await MyEvent.publish({
+  stringAttribute: 'string',
+  numberAttribute: 12,
+  // the following line will trigger a Typescript error
+  anotherAttribute: 'wrong',
+});
 ```
+
 ### Use the Event class to create an event
 
 ```ts
@@ -88,7 +89,6 @@ export const handler = async (event) => {
 ### Use the Event class to generate trigger rules
 
 Using the serverless framework with `serverless.ts` service file:
-
 
 ```ts
 import type { Serverless } from 'serverless/aws';
@@ -110,9 +110,9 @@ const serverlessConfiguration: Serverless = {
           },
         },
       ],
-    }
-  }
-}
+    },
+  },
+};
 
 module.exports = serverlessConfiguration;
 ```
@@ -126,7 +126,7 @@ import { MyEvent } from './events.ts';
 export const handler = (event: PublishedEvent<typeof MyEvent>) => {
   // Typed as string
   return event.detail.stringAttribute;
-}
+};
 ```
 
 ### Use the Event class to validate the input event

@@ -1,5 +1,5 @@
 import Ajv from 'ajv';
-import type { EventBridge } from 'aws-sdk';
+import type EventBridge from 'aws-sdk/clients/eventbridge';
 import { FromSchema, JSONSchema } from 'json-schema-to-ts';
 import type { EventBridgeEvent } from 'aws-lambda';
 

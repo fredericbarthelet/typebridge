@@ -1,4 +1,4 @@
-import type { EventBridge } from 'aws-sdk';
+import type EventBridge from 'aws-sdk/clients/eventbridge';
 import { PutEventsResultEntryList } from 'aws-sdk/clients/eventbridge';
 
 import { Event } from './Event';
