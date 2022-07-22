@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "ajv": "^6.12.6",
-    "json-schema-to-ts": "1.5.0"
+    "json-schema-to-ts": "2.1.1"
   },
   "devDependencies": {
     "@aws-sdk/client-eventbridge": "^3.50.0",
