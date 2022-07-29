@@ -3,7 +3,7 @@
       "declaration": false,
       "esModuleInterop": true,
       "lib": [
-        "es2015"
+        "es2015", "DOM"
       ],
       "module": "commonjs",
       "moduleResolution": "node",
