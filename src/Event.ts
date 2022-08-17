@@ -5,7 +5,7 @@ import type {
 } from '@aws-sdk/client-eventbridge';
 import { FromSchema, JSONSchema } from 'json-schema-to-ts';
 import type { EventBridgeEvent } from 'aws-lambda';
-
+import { Schemas, EventBridge } from 'aws-sdk';
 import { Bus } from './Bus';
 
 const ajv = new Ajv();
@@ -14,7 +14,7 @@ export class Event<N extends string, S extends JSONSchema> {
   private _name: N;
   private _source: string;
   private _bus: Bus;
-  private _schema: S;
+  private _schema: S | string;
   private _validate: Ajv.ValidateFunction;
   private _pattern: { 'detail-type': [N]; source: string[] };
 
@@ -27,13 +27,25 @@ export class Event<N extends string, S extends JSONSchema> {
     name: N;
     source: string;
     bus: Bus;
-    schema: S;
+    schema: S | string;
   }) {
     this._name = name;
     this._source = source;
     this._bus = bus;
     this._schema = schema;
-    this._validate = ajv.compile(schema);
+    let currentSchema;
+    if (typeof(schema) == 'string'){
+        var schemas = new Schemas();
+       currentSchema = schemas.describeSchema({"RegistryName": name, "SchemaName": schema}, function(err, data) {
+            if (err) console.log(err, err.stack); // an error occurred
+            else {
+                return data.content
+            }
+        });
+    } else {
+      currentSchema = schema;
+    }
+    this._validate = ajv.compile(currentSchema);
     this._pattern = { source: [source], 'detail-type': [name] };
   }
 
