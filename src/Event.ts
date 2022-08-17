@@ -4,18 +4,16 @@ import type {
   PutEventsResponse,
 } from '@aws-sdk/client-eventbridge';
 import { FromSchema, JSONSchema } from 'json-schema-to-ts';
-import type { EventBridgeEvent } from 'aws-lambda';
-import { DescribeSchemaCommand, DescribeSchemaCommandOutput, SchemasClient } from '@aws-sdk/client-schemas';
+import { DescribeSchemaCommand, SchemasClient } from '@aws-sdk/client-schemas';
 import { Bus } from './Bus';
 
-const ajv = new Ajv();
+const ajv = new Ajv({ removeAdditional: true, strictDefaults: false });
 
 export class Event<N extends string, S extends JSONSchema> {
   private _name: N;
   private _source: string;
   private _bus: Bus;
-  private _schema: S;
-  private _validate: Ajv.ValidateFunction;
+  private _schema: S | string;
   private _pattern: { 'detail-type': [N]; source: string[] };
   private _registryName?: string;
 
@@ -29,7 +27,7 @@ export class Event<N extends string, S extends JSONSchema> {
     name: N;
     source: string;
     bus: Bus;
-    schema: S | string;
+    schema: S | string; // either json schema or name of schema in registry
     registryName?: string;
   }) {
     this._name = name;
@@ -39,29 +37,34 @@ export class Event<N extends string, S extends JSONSchema> {
       throw ('Need to supply registryName when supplying a schema')
     }
 
-    let currentSchema: any;
-    if (typeof (schema) == 'string') {
-      var schemas = new SchemasClient({});
-
-      currentSchema = schemas.send(new DescribeSchemaCommand({ "RegistryName": registryName, "SchemaName": schema }), function(err: any, data: DescribeSchemaCommandOutput | undefined) {
-        if (err) throw (err);
-        else {
-          if (!data || !data.Content) { throw ("Schema is empty!") }
-          return JSON.parse(data.Content)
-        }
-      });
-      console.log("got the schema: " + currentSchema)
-      this._validate = ajv.compile(
-        // TODO make AWSEvent a configurable variable
-        Object.assign({ $ref: "#/components/schemas/AWSEvent" }, schema)
-      );
-    } else {
-      this._validate = ajv.compile(schema);
-    }
-    console.log(currentSchema)
-    this._schema = currentSchema;
+    this._schema = schema
     this._pattern = { source: [source], 'detail-type': [name] };
     this._registryName = registryName;
+  }
+
+  async validate(input: any) {
+    var schemas = new SchemasClient({});
+    let currentSchema: any;
+
+    let validate
+    if (this._registryName && typeof this._schema == "string") {
+      const currentSchemaResponse = await schemas.send(new DescribeSchemaCommand({ "RegistryName": this._registryName, "SchemaName": this._schema }));
+      if (!currentSchemaResponse.Content) {
+        throw ("couldnt fetch schema")
+      }
+
+      currentSchema = JSON.parse(currentSchemaResponse.Content)
+      validate = ajv.compile(
+        // TODO make AWSEvent a configurable variable
+        Object.assign({ $ref: "#/components/schemas/AWSEvent" }, currentSchema)
+      );
+    } else if (typeof this._schema != "string") {
+      validate = ajv.compile(this._schema);
+    } else {
+      throw ("impoosible case")
+    }
+
+    return validate(input)
   }
 
   get name(): N {
@@ -76,7 +79,7 @@ export class Event<N extends string, S extends JSONSchema> {
     return this._bus;
   }
 
-  get schema(): S {
+  get schema(): S | string {
     return this._schema;
   }
 
@@ -89,7 +92,7 @@ export class Event<N extends string, S extends JSONSchema> {
     properties: {
       source: { const: string };
       'detail-type': { const: N };
-      detail: S;
+      detail: S | string;
     };
     required: ['source', 'detail-type', 'detail'];
   } {
@@ -104,20 +107,8 @@ export class Event<N extends string, S extends JSONSchema> {
     };
   }
 
+
   create(event: FromSchema<S>): PutEventsRequestEntry {
-    // TODO
-    if (!this._registryName && !this._validate(event)) {
-      throw new Error(
-        'Event does not satisfy schema' + JSON.stringify(this._validate.errors),
-      );
-    }
-    if (this._registryName && !this._validate(event)) {
-      throw new Error(
-        'Event does not satisfy schema' + JSON.stringify(this._validate.errors),
-      );
-    }
-
-
     return {
       Source: this._source,
       DetailType: this._name,
@@ -126,13 +117,26 @@ export class Event<N extends string, S extends JSONSchema> {
   }
 
   async publish(event: FromSchema<S>): Promise<PutEventsResponse> {
+    if (this._registryName) {
+      const valid = await this.validate(event)
+      if (!valid)
+        throw new Error(
+          'Event does not satisfy schema' + JSON.stringify(valid),
+        );
+    }
+    if (!this._registryName && !(await this.validate(event))) {
+      throw new Error(
+        'Event does not satisfy schema' + JSON.stringify(await this.validate(event)),
+      );
+    }
+
     return this._bus.put([this.create(event)]);
   }
 }
 
-type GenericEvent = Event<string, JSONSchema>;
+//type GenericEvent = Event<string, JSONSchema>;
 
-export type PublishedEvent<Event extends GenericEvent> = EventBridgeEvent<
-  Event['name'],
-  FromSchema<Event['schema']>
->;
+// export type PublishedEvent<Event extends GenericEvent> = EventBridgeEvent<
+//   Event['name'],
+//   FromSchema<Event['schema']>
+// >;
