@@ -151,6 +151,31 @@ describe('Event', () => {
     });
   });
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   describe('#constructLiveValidation', () => {
     const eventBridgeMock = mockClient(EventBridgeClient);
     const schemasMock = mockClient(SchemasClient);
@@ -160,14 +185,85 @@ describe('Event', () => {
       .resolves({ Entries: [{ EventId: '123456' }] });
 
     const MyEventPayloadSchema = JSON.stringify({
-      type: 'object',
-      properties: {
-        stringAttribute: { type: 'string' },
-        numberAttribute: { type: 'integer' },
+      "info": {
+        "version": "1.0.0",
+        "title": "TaskClosed",
+        "description": "Event attempted to be published on TaskClosing, delivery not guaranteed."
       },
-      required: ['stringAttribute'],
-      additionalProperties: false
-    });
+      "paths": {},
+      "components": {
+        "schemas": {
+          "AWSEvent": {
+            "type": "object",
+            "required": [
+              "account",
+              "detail",
+              "detail-type",
+              "id",
+              "region",
+              "source",
+              "version",
+              "time"
+            ],
+            "properties": {
+              "detail": {
+                "$ref": "#/components/schemas/Task_closed"
+              },
+              "account": {
+                "type": "string"
+              },
+              "detail-type": {
+                "type": "string"
+              },
+              "id": {
+                "type": "string"
+              },
+              "region": {
+                "type": "string"
+              },
+              "source": {
+                "type": "string"
+              },
+              "version": {
+                "type": "string"
+              },
+              "time": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "Task_closed": {
+            "type": "object",
+            "required": [
+              "clientId",
+              "partnerId",
+              "taskTypeId",
+              "country",
+              "clientCountry"
+            ],
+            "properties": {
+              "clientId": {
+                "type": "number"
+              },
+              "partnerId": {
+                "type": "number"
+              },
+              "taskTypeId": {
+                "type": "number"
+              },
+              "country": {
+                "type": "string"
+              },
+              "clientCountry": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+    );
 
     schemasMock
       .on(DescribeSchemaCommand)

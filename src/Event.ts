@@ -35,11 +35,11 @@ export class Event<N extends string, S extends JSONSchema> {
     this._name = name;
     this._source = source;
     this._bus = bus;
-    let currentSchema: any;
     if (typeof (schema) == 'string' && registryName == undefined) {
       throw ('Need to supply registryName when supplying a schema')
     }
 
+    let currentSchema: any;
     if (typeof (schema) == 'string') {
       var schemas = new SchemasClient({});
 
@@ -50,12 +50,16 @@ export class Event<N extends string, S extends JSONSchema> {
           return JSON.parse(data.Content)
         }
       });
+      console.log("got the schema: " + currentSchema)
+      this._validate = ajv.compile(
+        // TODO make AWSEvent a configurable variable
+        Object.assign({ $ref: "#/components/schemas/AWSEvent" }, schema)
+      );
     } else {
-      currentSchema = schema;
+      this._validate = ajv.compile(schema);
     }
     console.log(currentSchema)
     this._schema = currentSchema;
-    this._validate = ajv.compile(currentSchema);
     this._pattern = { source: [source], 'detail-type': [name] };
     this._registryName = registryName;
   }
