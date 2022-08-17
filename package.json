@@ -19,6 +19,7 @@
     "test": "jest --runInBand"
   },
   "dependencies": {
+    "@aws-sdk/client-schemas": "^3.150.0",
     "ajv": "^6.12.6",
     "json-schema-to-ts": "^2.5.5"
   },

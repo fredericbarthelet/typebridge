@@ -5,7 +5,7 @@ import type {
 } from '@aws-sdk/client-eventbridge';
 import { FromSchema, JSONSchema } from 'json-schema-to-ts';
 import type { EventBridgeEvent } from 'aws-lambda';
-import { Schemas, EventBridge } from 'aws-sdk';
+import { DescribeSchemaCommand, DescribeSchemaCommandOutput, SchemasClient } from '@aws-sdk/client-schemas';
 import { Bus } from './Bus';
 
 const ajv = new Ajv();
@@ -14,39 +14,50 @@ export class Event<N extends string, S extends JSONSchema> {
   private _name: N;
   private _source: string;
   private _bus: Bus;
-  private _schema: S | string;
+  private _schema: S;
   private _validate: Ajv.ValidateFunction;
   private _pattern: { 'detail-type': [N]; source: string[] };
+  private _registryName?: string;
 
   constructor({
     name,
     source,
     bus,
     schema,
+    registryName
   }: {
     name: N;
     source: string;
     bus: Bus;
     schema: S | string;
+    registryName?: string;
   }) {
     this._name = name;
     this._source = source;
     this._bus = bus;
-    this._schema = schema;
-    let currentSchema;
-    if (typeof(schema) == 'string'){
-        var schemas = new Schemas();
-       currentSchema = schemas.describeSchema({"RegistryName": name, "SchemaName": schema}, function(err, data) {
-            if (err) console.log(err, err.stack); // an error occurred
-            else {
-                return data.content
-            }
-        });
+    let currentSchema: any;
+    if (typeof (schema) == 'string' && registryName == undefined) {
+      throw ('Need to supply registryName when supplying a schema')
+    }
+
+    if (typeof (schema) == 'string') {
+      var schemas = new SchemasClient({});
+
+      currentSchema = schemas.send(new DescribeSchemaCommand({ "RegistryName": registryName, "SchemaName": schema }), function(err: any, data: DescribeSchemaCommandOutput | undefined) {
+        if (err) throw (err);
+        else {
+          if (!data || !data.Content) { throw ("Schema is empty!") }
+          return JSON.parse(data.Content)
+        }
+      });
     } else {
       currentSchema = schema;
     }
+    console.log(currentSchema)
+    this._schema = currentSchema;
     this._validate = ajv.compile(currentSchema);
     this._pattern = { source: [source], 'detail-type': [name] };
+    this._registryName = registryName;
   }
 
   get name(): N {
@@ -90,11 +101,18 @@ export class Event<N extends string, S extends JSONSchema> {
   }
 
   create(event: FromSchema<S>): PutEventsRequestEntry {
-    if (!this._validate(event)) {
+    // TODO
+    if (!this._registryName && !this._validate(event)) {
       throw new Error(
         'Event does not satisfy schema' + JSON.stringify(this._validate.errors),
       );
     }
+    if (this._registryName && !this._validate(event)) {
+      throw new Error(
+        'Event does not satisfy schema' + JSON.stringify(this._validate.errors),
+      );
+    }
+
 
     return {
       Source: this._source,
