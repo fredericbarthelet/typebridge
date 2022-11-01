@@ -1,6 +1,5 @@
 import type {
   EventBridgeClient,
-  PutEventsResponse,
   PutEventsRequestEntry,
   PutEventsResultEntry,
 } from '@aws-sdk/client-eventbridge';
@@ -29,7 +28,10 @@ export class Bus {
     this._eventBridge = EventBridge;
   }
 
-  async put(events: PutEventsRequestEntry[]): Promise<PutEventsResponse> {
+  async put(events: PutEventsRequestEntry[]): Promise<{
+    FailedEntryCount?: number;
+    Entries?: (PutEventsRequestEntry & PutEventsResultEntry)[];
+  }> {
     const entries = events.map((entry) =>
       Object.assign({}, { ...entry }, { EventBusName: this._name }),
     );
@@ -43,15 +45,18 @@ export class Bus {
     );
 
     return results.reduce<{
-      Entries: PutEventsResultEntry[];
+      Entries: (PutEventsRequestEntry & PutEventsResultEntry)[];
       FailedEntryCount: number;
     }>(
-      (returnValue, result) => {
+      (returnValue, result, index) => {
         if (result.FailedEntryCount) {
           returnValue.FailedEntryCount += result.FailedEntryCount;
         }
         if (result.Entries) {
-          returnValue.Entries.push(...result.Entries);
+          const enrichedResult = result.Entries.map((entry) =>
+            Object.assign({}, { ...entry }, { ...entries[index] }),
+          );
+          returnValue.Entries.push(...enrichedResult);
         }
 
         return returnValue;
