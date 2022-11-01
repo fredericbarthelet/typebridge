@@ -1,7 +1,7 @@
 import Ajv from 'ajv';
 import type {
   PutEventsRequestEntry,
-  PutEventsResponse,
+  PutEventsResultEntry,
 } from '@aws-sdk/client-eventbridge';
 import { FromSchema, JSONSchema } from 'json-schema-to-ts';
 import type { EventBridgeEvent } from 'aws-lambda';
@@ -91,7 +91,10 @@ export class Event<N extends string, S extends JSONSchema> {
     };
   }
 
-  async publish(event: FromSchema<S>): Promise<PutEventsResponse> {
+  async publish(event: FromSchema<S>): Promise<{
+    FailedEntryCount?: number;
+    Entries?: (PutEventsRequestEntry & PutEventsResultEntry)[];
+  }> {
     return this._bus.put([this.create(event)]);
   }
 }

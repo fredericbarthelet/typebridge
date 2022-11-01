@@ -54,12 +54,19 @@ describe('Event', () => {
     });
 
     it('should allow publishing an event', async () => {
-      expect(
-        await myEvent.publish({
-          attribute: 'hello',
-          numberAttribute: 12,
-        }),
-      ).toHaveProperty('Entries', [{ EventId: '123456' }]);
+      const eventPayload = {
+        attribute: 'hello',
+        numberAttribute: 12,
+      };
+      expect(await myEvent.publish(eventPayload)).toHaveProperty('Entries', [
+        {
+          EventId: '123456',
+          DetailType: 'myEvent',
+          Detail: JSON.stringify(eventPayload),
+          EventBusName: 'test',
+          Source: 'source',
+        },
+      ]);
     });
 
     it('should fail with the use of validationMiddleware on wrong event', () => {
