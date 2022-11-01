@@ -33,7 +33,7 @@
     "@typescript-eslint/eslint-plugin": "^5.11.0",
     "@typescript-eslint/parser": "^5.11.0",
     "aws-lambda-mock-context": "^3.2.1",
-    "aws-sdk-client-mock": "^0.5.6",
+    "aws-sdk-client-mock": "^2.0.0",
     "eslint": "^8.8.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-jest": "^26.1.0",
