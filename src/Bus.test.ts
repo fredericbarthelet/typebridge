@@ -133,9 +133,9 @@ describe('Bus', () => {
       expect(
         computeEventSize({
           DetailType: 'myType',
-          Detail: JSON.stringify({ property: 'vaalue' }),
+          Detail: JSON.stringify({ property: 'value' }),
         }),
-      ).toBe(27);
+      ).toBe(26);
     });
   });
 
